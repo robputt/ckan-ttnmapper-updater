@@ -21,7 +21,6 @@ def get_config():
 
         ckan_url = config_data['ckan_url']
         api_key = config_data['api_key']
-        gateways = config_data['gateways']
 
     except json.decoder.JSONDecodeError:
         logging.error("Configuration file does not appear to be "
@@ -38,7 +37,7 @@ def get_config():
                       "Check you have url, api_key and gateways")
         sys.exit(1)
 
-    return ckan_url, api_key, gateways
+    return ckan_url, api_key
 
 
 def process_gateway(ckan_url, api_key, gateway):
@@ -80,10 +79,48 @@ def process_gateway(ckan_url, api_key, gateway):
                         % ckan_resp.text)
 
 
+def get_gateways_from_inventory():
+    gateways = []
+    try:
+        inventory_dir = os.environ['INVENTORY']
+        inventory_files = os.listdir(inventory_dir)
+
+        if inventory_files:
+            for file in inventory_files:
+                if 'gw' in file:
+                    try:
+                        logging.info("Loading %s from inventory" % file)
+                        inventory_file = '%s/%s' % (inventory_dir, file)
+                        with open(inventory_file, 'r') as fhandle:
+                            gw_data = json.load(fhandle)
+                            gateways.append(gw_data)
+
+                    except json.decoder.JSONDecodeError:
+                        logging.error("Inventory file does not appear to "
+                                      "be valid JSON - skipping")
+
+                    except KeyError:
+                        logging.error("Inventory file is missing required "
+                                      "key - skipping")
+
+                    logging.info("Loaded gateway inventory data: %s" % gw_data)
+
+        else:
+            logging.error("Unable to load inventory, no files found.")
+
+    except Exception as err:
+        logging.error("Error occured whilst loading inventory: %s" % err)
+
+    return gateways
+
+
 def run_updater():
     logging.info("Running CKAN TTNMapper Updater")
     logging.info("Loading configuration file")
-    ckan_url, api_key, gateways = get_config()
+    ckan_url, api_key = get_config()
+
+    logging.info("Fetching gateways from inventory")
+    gateways = get_gateways_from_inventory()
 
     logging.info("Updating resources at %s" % ckan_url)
     for gateway in gateways:
