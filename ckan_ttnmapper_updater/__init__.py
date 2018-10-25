@@ -58,13 +58,11 @@ def process_gateway(ckan_url, api_key, gateway):
     logging.info("Uploading acquired data to CKAN service")
 
     multipart_data = MultipartEncoder(
-        fields={
-                'upload': ('alphashapre.geojson', geojson_data, 'text/plain'),
-                'format': 'GeoJSON', 
+        fields={'upload': ('alphashapre.geojson', geojson_data, 'text/plain'),
+                'format': 'GeoJSON',
                 'id': gateway['ckan_id'],
-                'name': gateway['name']
-               }
-        )
+                'name': gateway['name']}
+    )
 
     headers = {'Content-Type': multipart_data.content_type,
                'Authorization': api_key}
